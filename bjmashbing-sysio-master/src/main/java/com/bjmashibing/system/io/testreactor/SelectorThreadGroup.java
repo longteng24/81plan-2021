@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @create: 2020-06-21 20:37
  */
 public class SelectorThreadGroup {  //天生都是boss
-
+    //线程组
     SelectorThread[] sts;
     ServerSocketChannel server=null;
     AtomicInteger xid = new AtomicInteger(0);
@@ -100,6 +100,8 @@ public class SelectorThreadGroup {  //天生都是boss
 
 
     }
+
+    // 无论serverSocket 还是 clientSockert 都属于channel
     public void nextSelector(Channel c) {
         SelectorThread st = next();  //在 main线程种，取到堆里的selectorThread对象
 

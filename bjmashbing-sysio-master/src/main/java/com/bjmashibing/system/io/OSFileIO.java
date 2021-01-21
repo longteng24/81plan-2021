@@ -1,6 +1,7 @@
 package com.bjmashibing.system.io;
 
 import org.junit.Test;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -12,7 +13,7 @@ import java.nio.channels.FileChannel;
 public class OSFileIO {
 
     static byte[] data = "123456789\n".getBytes();
-    static String path =  "/root/testfileio/out.txt";
+    static String path =  "/teng/test/io/out.txt";
 
 
     public static void main(String[] args) throws Exception {
@@ -41,7 +42,7 @@ public class OSFileIO {
         File file = new File(path);
         FileOutputStream out = new FileOutputStream(file);
         while(true){
-            Thread.sleep(10);
+        //    Thread.sleep(10);
             out.write(data);
 
         }
@@ -55,7 +56,7 @@ public class OSFileIO {
         File file = new File(path);
         BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file));
         while(true){
-            Thread.sleep(10);
+         //   Thread.sleep(10);
             out.write(data);
         }
     }
@@ -121,7 +122,7 @@ public class OSFileIO {
     }
 
 
-    @Test
+     @Test
     public  void whatByteBuffer(){
 
 //        ByteBuffer buffer = ByteBuffer.allocate(1024);
