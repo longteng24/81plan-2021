@@ -3,8 +3,6 @@ package com.teng.system.io.testreactor;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.Channel;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -24,7 +22,7 @@ public class SelectorThreadGroup {
         //num 线程数
         sts = new SelectorThread[num];
         for (int i = 0; i < num; i++) {
-            sts[i] = new SelectorThread();
+            sts[i] = new SelectorThread(this);
 
             new Thread(sts[i]).start();
         }
@@ -47,7 +45,7 @@ public class SelectorThreadGroup {
 
     }
     //无论serverSocket socket 都复用这个方法
-    private void nextSelector(Channel c) {
+    public void nextSelector(Channel c) {
         SelectorThread st = next();  // 在 main 线程中 ，取到堆里的selectorThread对象
 
         //1.通过队列传递数据 消息
@@ -62,7 +60,7 @@ public class SelectorThreadGroup {
 
 
 
-/*        try {
+ /*        try {
             s.register(st.selector, SelectionKey.OP_ACCEPT);  // 会被阻塞  wakeup()
 
             st.selector.wakeup(); //功能是让 selector的select()方法,立刻返回不阻塞

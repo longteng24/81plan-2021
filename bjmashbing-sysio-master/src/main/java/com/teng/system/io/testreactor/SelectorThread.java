@@ -24,10 +24,12 @@ public class SelectorThread implements  Runnable {
     Selector selector=null;
 
     LinkedBlockingDeque<Channel> lbq = new LinkedBlockingDeque<>();
+    SelectorThreadGroup stg;
 
-    SelectorThread() {
+    SelectorThread(SelectorThreadGroup stg) {
 
         try {
+            this.stg = stg;
             //epoll_create
             selector = Selector.open();
         } catch (IOException e) {
@@ -61,13 +63,12 @@ public class SelectorThread implements  Runnable {
                         } else if (key.isWritable()) {
 
                         }
-
                     }
-
                 }
 
                 //3.处理一些task ， 注册 server client
-                if (!lbq.isEmpty()) {
+                if (!lbq.isEmpty()) {    //线程的栈是独立的，堆里的对象时共享的
+                    // 只有方法·和逻辑，本地变量是线程隔离的
                     Channel c = lbq.take();
                     if (c instanceof ServerSocketChannel) {
                         ServerSocketChannel server = (ServerSocketChannel) c;
@@ -113,9 +114,6 @@ public class SelectorThread implements  Runnable {
                     key.cancel();
                     break;
                 }
-
-
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -125,16 +123,15 @@ public class SelectorThread implements  Runnable {
     }
 
     private void acceptHandler(SelectionKey key) {
-
+        System.out.println("acceptHandler....");
         ServerSocketChannel server =(ServerSocketChannel) key.channel();
 
         try {
-            System.out.println("acceptHandler....");
             SocketChannel client = server.accept();
             client.configureBlocking(false);
 
             //choose a selector and register!!!
-
+            stg.nextSelector(client);
 
         } catch (IOException e) {
             e.printStackTrace();
