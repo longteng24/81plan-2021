@@ -21,7 +21,7 @@ public class SocketClient extends Thread{
     public static void main(String[] args) throws Exception{
 
         //目标服务器的 IP地址 和 端口号
-        client = new Socket(InetAddress.getByName("localhost"),9999);
+        client = new Socket(InetAddress.getByName("localhost"),6666);
 
         //读取返回 数据 指定  其输入缓冲的空间地址 中数据   读取缓存  通过 控制台 输入（由客户端 人工输入）
         br = new BufferedReader(new InputStreamReader(System.in));

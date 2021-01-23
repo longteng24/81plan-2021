@@ -15,7 +15,7 @@ import java.util.concurrent.LinkedBlockingDeque;
  * @author: Mr.Teng
  * @create: 2021-01-21 21:23
  **/
-public class SelectorThread implements  Runnable {
+public class SelectorThread extends ThreadLocal<LinkedBlockingDeque<Channel>> implements  Runnable {
     //每个线程对应一个Selector
     //多线程情况下，该主机。该程序的并发客户端被分配到多个selectors上
     //注意每个客户端，只绑定到其中一个selector
@@ -23,8 +23,13 @@ public class SelectorThread implements  Runnable {
 
     Selector selector=null;
 
-    LinkedBlockingDeque<Channel> lbq = new LinkedBlockingDeque<>();
+    LinkedBlockingDeque<Channel> lbq = get();
     SelectorThreadGroup stg;
+
+    @Override
+    protected LinkedBlockingDeque<Channel> initialValue() {
+        return new LinkedBlockingDeque<>();
+    }
 
     SelectorThread(SelectorThreadGroup stg) {
 
@@ -133,11 +138,15 @@ public class SelectorThread implements  Runnable {
             client.configureBlocking(false);
 
             //choose a selector and register!!!
-            stg.nextSelectorV2(client);
+            stg.nextSelectorV3(client);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+    }
+
+    public void setWorker(SelectorThreadGroup stgWorker) {
+        this.stg = stgWorker;
     }
 }

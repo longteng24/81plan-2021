@@ -12,11 +12,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author: Mr.Teng
  * @create: 2021-01-21 21:44
  **/
-public class SelectorThreadGroup {
+public class SelectorThreadGroup {   //天生都是boss
 
     SelectorThread[] sts;
     ServerSocketChannel server = null;
     AtomicInteger xid = new AtomicInteger(0);
+
+    SelectorThreadGroup stg = this;
+
+    public void setWorker(SelectorThreadGroup stg) {
+        this.stg = stg;
+    }
 
     SelectorThreadGroup(int num) {
         //num 线程数
@@ -35,13 +41,38 @@ public class SelectorThreadGroup {
             server.bind(new InetSocketAddress(port));
 
             //注册到那个selector上呢
-            nextSelectorV2(server);
+            nextSelectorV3(server);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
 
     }
+
+    public void nextSelectorV3(Channel c) {
+        try {
+
+        SelectorThread st = null;
+        if (c instanceof ServerSocketChannel) {
+            // listen 选择了 boss组中的一个线程后， 要更新这个线程的work组
+            st = next();
+            st.setWorker(stg);
+        } else {
+            st = nextV3();
+        }
+        st.lbq.add(c);
+        st.selector.wakeup();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private SelectorThread nextV3() {
+        int index=xid.incrementAndGet() % stg.sts.length;   //动用worker线程分配
+        return stg.sts[index];
+    }
+
     //无论serverSocket socket 都复用这个方法
     public void nextSelector(Channel c) {
         SelectorThread st = next();  // 在 main 线程中 ，取到堆里的selectorThread对象
