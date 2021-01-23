@@ -1,10 +1,13 @@
 package com.teng.system.io.netty;
 
+import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -140,6 +143,43 @@ public class MyNetty {
         System.out.println("client over....");
     }
 
+
+
+
+    @Test
+    public void nettyClient() {
+        NioEventLoopGroup group = new NioEventLoopGroup(1);
+        Bootstrap bs = new Bootstrap();
+
+        ChannelFuture connect = bs.group(group)
+                .channel(NioSocketChannel.class)
+//                .handler(new ChannelInit())
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        ChannelPipeline p = ch.pipeline();
+                        p.addLast(new MyInHandler());
+
+                    }
+                })
+                .connect(new InetSocketAddress("121.36.28.218", 9999));
+        try {
+            //同步 连接完成
+            Channel client = connect.sync().channel();
+
+            ByteBuf buf = Unpooled.copiedBuffer("hello  server.".getBytes());
+            // 写事件
+            ChannelFuture send = client.writeAndFlush(buf);
+            send.sync();
+
+            //  等待关闭事件  阻塞客户端关闭
+            client.closeFuture().sync();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     @Test
     public void serverMode() throws InterruptedException {
         NioEventLoopGroup thread = new NioEventLoopGroup(1);
@@ -177,6 +217,7 @@ public class MyNetty {
             ChannelPipeline p = client.pipeline();
             p.addLast(new MyInHandler());   // 2. client :: pipeline [MyInHandler]
 
+            //注册业务handler处理完成，移除自己
             ctx.pipeline().remove(this);
         }
     }
@@ -250,6 +291,27 @@ public class MyNetty {
             //注册
             selector.register(client); //当注册时，触发 ChannelInit 中 register事件
         }
+    }
+
+    @Test
+    public void nettyServer() throws InterruptedException {
+        NioEventLoopGroup group = new NioEventLoopGroup(1);
+        ServerBootstrap bs = new ServerBootstrap();
+        ChannelFuture bind = bs.group(group, group)
+                .channel(NioServerSocketChannel.class)
+//                .childHandler(new ChannelInit())
+                .childHandler(new ChannelInitializer<NioSocketChannel>() {
+                    @Override
+                    protected void initChannel(NioSocketChannel ch) throws Exception {
+                        ChannelPipeline p = ch.pipeline();
+                        p.addLast(new MyInHandler());
+                    }
+                })
+                .bind(new InetSocketAddress("192.168.1.6", 8888));
+
+        bind.sync().channel().closeFuture().sync();
+
+
     }
 }
 
