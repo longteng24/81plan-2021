@@ -35,9 +35,7 @@ public class SelectorThreadGroup {
             server.bind(new InetSocketAddress(port));
 
             //注册到那个selector上呢
-            nextSelector(server);
-
-
+            nextSelectorV2(server);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -52,14 +50,9 @@ public class SelectorThreadGroup {
         st.lbq.add(c);
         //2.通过打断阻塞，让对应的线程 自己在打断后完成注册 selector
         st.selector.wakeup();
-
         // 重点 ： c可能是server  或 client
 //        ServerSocketChannel s = (ServerSocketChannel) c;
         //呼应上    int nums = selector.select(); //阻塞 wakeup()叫醒
-
-
-
-
  /*        try {
             s.register(st.selector, SelectionKey.OP_ACCEPT);  // 会被阻塞  wakeup()
 
@@ -69,12 +62,29 @@ public class SelectorThreadGroup {
         } catch (ClosedChannelException e) {
             e.printStackTrace();
         }*/
-
-
     }
     //无论serverSocket socket 都复用这个方法
     private SelectorThread next() {
+        // incrementAndGet 先加一 ，在执行其他操作
         int index=xid.incrementAndGet() % sts.length;
         return sts[index];
+    }
+
+    //无论serverSocket  注册到sts[0]    ,其他socket轮询分配
+    public void nextSelectorV2(Channel c) {
+        SelectorThread st = null;
+        if (c instanceof ServerSocketChannel) {
+            st = sts[0];
+        } else {
+            st = nextV2();
+        }
+        st.lbq.add(c);
+        st.selector.wakeup();
+    }
+    // accept指定到 sts[0] ,其他事件，给其他线程处理
+    private SelectorThread nextV2() {
+        // incrementAndGet 先加一 ，在执行其他操作
+        int index=xid.incrementAndGet() % (sts.length-1);
+        return sts[index+1];
     }
 }

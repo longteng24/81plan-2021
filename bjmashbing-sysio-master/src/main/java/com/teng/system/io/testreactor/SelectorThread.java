@@ -43,11 +43,11 @@ public class SelectorThread implements  Runnable {
         while (true) {
             try {
                 //1.select()
-                System.out.println(Thread.currentThread().getName() + ":before select..." + selector.keys().size());
+            //    System.out.println(Thread.currentThread().getName() + ":before select..." + selector.keys().size());
                 int nums = selector.select(); //阻塞 wakeup()叫醒
 
 //                Thread.sleep(1000);  这绝对不会解决方案
-                 System.out.println(Thread.currentThread().getName() + ":after select..." + selector.keys().size());
+           //      System.out.println(Thread.currentThread().getName() + ":after select..." + selector.keys().size());
 
                 //2.处里selectkeys
                 if (nums > 0) {
@@ -72,10 +72,12 @@ public class SelectorThread implements  Runnable {
                     Channel c = lbq.take();
                     if (c instanceof ServerSocketChannel) {
                         ServerSocketChannel server = (ServerSocketChannel) c;
+                        System.out.println(Thread.currentThread().getName() + ":ServerSocketChannel register...liesen" );
                         server.register(selector, SelectionKey.OP_ACCEPT);
                     } else if (c instanceof SocketChannel) {
                         SocketChannel client = (SocketChannel) c;
                         ByteBuffer buffer = ByteBuffer.allocateDirect(4096);
+                        System.out.println(Thread.currentThread().getName() + ":SocketChannel register..." +client.getRemoteAddress());
                         client.register(selector, SelectionKey.OP_READ, buffer);
                     }
                 }
@@ -123,7 +125,7 @@ public class SelectorThread implements  Runnable {
     }
 
     private void acceptHandler(SelectionKey key) {
-        System.out.println("acceptHandler....");
+        System.out.println(Thread.currentThread().getName() + "acceptHandler....");
         ServerSocketChannel server =(ServerSocketChannel) key.channel();
 
         try {
@@ -131,7 +133,7 @@ public class SelectorThread implements  Runnable {
             client.configureBlocking(false);
 
             //choose a selector and register!!!
-            stg.nextSelector(client);
+            stg.nextSelectorV2(client);
 
         } catch (IOException e) {
             e.printStackTrace();

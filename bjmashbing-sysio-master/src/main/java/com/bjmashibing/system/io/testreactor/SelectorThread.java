@@ -53,7 +53,7 @@ public class SelectorThread  extends  ThreadLocal<LinkedBlockingQueue<Channel>> 
 //                System.out.println(Thread.currentThread().getName()+"   :  before select...."+ selector.keys().size());
                 int nums = selector.select();  //阻塞  wakeup()
 //                Thread.sleep(1000);  //这绝对不是解决方案，我只是给你演示
-//                System.out.println(Thread.currentThread().getName()+"   :  after select...." + selector.keys().size());
+                System.out.println(Thread.currentThread().getName()+"   :  after select...." + selector.keys().size());
 
                 //2,处理selectkeys
                 if(nums>0){

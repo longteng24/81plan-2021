@@ -26,7 +26,7 @@ public class NettyClient {
             Bootstrap boot = new Bootstrap();
             boot.group(worker)
                     .channel(NioSocketChannel.class)
-                    .remoteAddress("192.168.150.11", 9090)
+                    .remoteAddress("127.0.0.1", 9999)
                     .handler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel sc) throws Exception {
