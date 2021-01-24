@@ -1,4 +1,4 @@
-package com.teng.system.io.netty;
+package com.teng.system.io.reconsitution.rpc.protocol;
 
 import java.io.Serializable;
 
@@ -7,7 +7,8 @@ public class MyContent implements Serializable {
     String methodName;
     Class<?>[] parameterTypes;
     Object[] args;
-    String res;
+    //返回数据
+    Object res;
 
     public String getName() {
         return name;
@@ -41,11 +42,11 @@ public class MyContent implements Serializable {
         this.args = args;
     }
 
-    public void setRes(String res) {
+    public void setRes(Object res) {
         this.res = res;
     }
 
-    public String getRes() {
+    public Object getRes() {
         return res;
     }
 }

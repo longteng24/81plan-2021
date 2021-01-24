@@ -1,12 +1,10 @@
-package com.teng.system.io.netty;
+package com.teng.system.io.reconsitution.rpc.util;
 
-/**
- * @program: 81plan
- * @description:
- * @author: Mr.Teng
- * @create: 2021-01-23 19:28
- **/
-public class PackageMsg {
+
+import com.teng.system.io.reconsitution.rpc.protocol.MyContent;
+import com.teng.system.io.reconsitution.rpc.protocol.MyHeader;
+
+public  class PackageMsg {
 
     MyHeader header;
     MyContent content;
@@ -32,3 +30,4 @@ public class PackageMsg {
         this.content = content;
     }
 }
+

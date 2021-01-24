@@ -1,6 +1,7 @@
-package com.teng.system.io.netty;
+package com.teng.system.io.rpc;
 
 
+import com.teng.system.io.reconsitution.proxy.MyProxy;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
@@ -95,7 +96,7 @@ public class MyRPCTest {
 
         for (int i = 0; i < size; i++) {
             threads[i] = new Thread(() -> {
-                Car car = proxyGet(Car.class);//动态代理实现
+                Car car = MyProxy.proxyGet(Car.class);//动态代理实现  是真的要实现RPC调用吗
                 String arg = "hello" + num.incrementAndGet();
              String res=   car.ooxx(arg);
                 System.out.println("client over msg: "+res+" ,src arg: "+arg);
@@ -115,92 +116,7 @@ public class MyRPCTest {
 //        fly.xxoo("hello");
     }
 
-    public static   <T> T proxyGet(Class<T> interfaceInfo) {
-      //实现各自版本的动态代理
 
-        ClassLoader loader = interfaceInfo.getClassLoader();
-        Class<?>[] methodInfo = {interfaceInfo};
-
-
-
-        return (T) Proxy.newProxyInstance(loader, methodInfo, new InvocationHandler() {
-            @Override
-            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                // 如何设计我们的consumer对于 provider的调用过程
-
-                //1.调用  服务，方法，参数  =》封装成message  [content]
-                String name = interfaceInfo.getName();
-
-                String methodName = method.getName();
-                Class<?>[] parameterTypes = method.getParameterTypes();
-
-                MyContent content = new MyContent();
-
-                content.setArgs(args);
-                content.setName(name);
-                content.setMethodName(methodName);
-                content.setParameterTypes(parameterTypes);
-
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                ObjectOutputStream oout = new ObjectOutputStream(out);
-                oout.writeObject(content);
-                byte[] msgBody = out.toByteArray();
-
-
-
-                //2.requestId+message ,本地要缓存
-                // 协议：【header< >】 【msgBody】
-
-                MyHeader header = createHeader(msgBody);
-
-                out.reset();
-                 oout = new ObjectOutputStream(out);
-                oout.writeObject(header);
-                // TODO: 解决数据decode问题
-                //TODO Server dispather Execuror
-                byte[] msgHeader = out.toByteArray();
-
-         //       System.out.println("msgHeader length :"+msgHeader.length);
-
-
-
-                //3.连接池：：取得连接
-                ClientFactory factory = ClientFactory.getFactory();
-                NioSocketChannel clientChannel = factory.getClient(new InetSocketAddress("localhost", 9090));
-                //获取连接过程中： 开始-创建  连接-直接取
-
-
-                // 4.发送 -->走IO out   走netty (event驱动)
-                ByteBuf byteBuf = PooledByteBufAllocator.DEFAULT.directBuffer(msgHeader.length + msgBody.length);
-
-             //   CountDownLatch countDownLatch = new CountDownLatch(1);
-
-                long id = header.getRequestId();
-
-                //用于等待异步方法处理完，接收返回值
-                CompletableFuture<String> res = new CompletableFuture<>();
-
-                ResponseMappingCallback.addCallBack(id, res);
-
-
-
-                byteBuf.writeBytes(msgHeader);
-                byteBuf.writeBytes(msgBody);
-                ChannelFuture channelFuture = clientChannel.writeAndFlush(byteBuf);
-                channelFuture.sync();  // io双向，你看似sync ,她仅代表out
-
-
-
-              //  countDownLatch.await();
-
-
-                // 5. ？如果从IO， 未来回来了，怎么将代码执行到这里
-                //(睡眠/回调，如果让线程停下来？ 你还能让他继续。。。)
-
-                return res.get(); //阻塞的
-            }
-        });
-    }
 
 
 
@@ -339,8 +255,6 @@ class ClientFactory {
 }
 
 
-
-
 class ResponseMappingCallback {
   static   ConcurrentHashMap<Long, CompletableFuture> mapping = new ConcurrentHashMap<>();
 
@@ -372,8 +286,8 @@ class ServerDecode extends ByteToMessageDecoder{
     protected void decode(ChannelHandlerContext ctx, ByteBuf buf, List<Object> out) throws Exception {
 
    //     System.out.println("channel start :"+buf.readableBytes());
-        while (buf.readableBytes() >= 103) {
-            byte[] bytes = new byte[103];
+        while (buf.readableBytes() >= 124) {
+            byte[] bytes = new byte[124];
             buf.getBytes(buf.readerIndex(),bytes); //从哪读，不会移动指针
             ByteArrayInputStream in = new ByteArrayInputStream(bytes);
             ObjectInputStream oin = new ObjectInputStream(in);
@@ -385,7 +299,7 @@ class ServerDecode extends ByteToMessageDecoder{
             //通信协议
             if (buf.readableBytes() >= header.getDataLen()) {
                 //处理指针  移动指针到body开始位位置   保证buf读 整个头和体
-                buf.readBytes(103);
+                buf.readBytes(124);
 
                 byte[] data = new byte[(int)header.getDataLen()];
                 buf.readBytes(data);
@@ -413,6 +327,7 @@ class ServerDecode extends ByteToMessageDecoder{
 
     }
 }
+
 class ServerRequestHandler extends ChannelInboundHandlerAdapter {
 
     Dispatcher dis;
@@ -560,3 +475,96 @@ class ClientPool{
 
 }
 
+class PackageMsg {
+
+    MyHeader header;
+    MyContent content;
+
+    public PackageMsg(MyHeader header, MyContent content) {
+        this.content = content;
+        this.header = header;
+    }
+
+    public MyHeader getHeader() {
+        return header;
+    }
+
+    public void setHeader(MyHeader header) {
+        this.header = header;
+    }
+
+    public MyContent getContent() {
+        return content;
+    }
+
+    public void setContent(MyContent content) {
+        this.content = content;
+    }
+}
+
+class MyContent implements Serializable {
+    String name;
+    String methodName;
+    Class<?>[] parameterTypes;
+    Object[] args;
+    String res;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getMethodName() {
+        return methodName;
+    }
+
+    public void setMethodName(String methodName) {
+        this.methodName = methodName;
+    }
+
+    public Class<?>[] getParameterTypes() {
+        return parameterTypes;
+    }
+
+    public void setParameterTypes(Class<?>[] parameterTypes) {
+        this.parameterTypes = parameterTypes;
+    }
+
+    public Object[] getArgs() {
+        return args;
+    }
+
+    public void setArgs(Object[] args) {
+        this.args = args;
+    }
+
+    public void setRes(String res) {
+        this.res = res;
+    }
+
+    public String getRes() {
+        return res;
+    }
+}
+
+class SerDerUtil {
+    static ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+    public synchronized static byte[] ser(Object msg) {
+        out.reset();
+        ObjectOutputStream oout = null;
+        byte[] msgBody=null;
+        try {
+            oout = new ObjectOutputStream(out);
+            oout.writeObject(msg);
+            msgBody = out.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+//
+        return msgBody;
+    }
+}
