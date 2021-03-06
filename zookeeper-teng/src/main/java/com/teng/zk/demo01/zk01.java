@@ -129,7 +129,7 @@ public class zk01 {
 
 
         System.out.println("----async start------");
-        // 异步回调
+        // 异步回调  reactor
         zk.getData("/oxx", false, new AsyncCallback.DataCallback() {
             @Override
             public void processResult(int i, String s, Object o, byte[] bytes, Stat stat) {
