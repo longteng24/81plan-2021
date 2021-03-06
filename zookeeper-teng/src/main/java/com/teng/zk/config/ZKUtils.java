@@ -17,7 +17,8 @@ public class ZKUtils {
 
     private static ZooKeeper zk;
 
-    private static String address = "localhost:2181,localhost:2182,localhost:2183,localhost:2184/tengConf";
+   // private static String address = "localhost:2181,localhost:2182,localhost:2183,localhost:2184/tengConf";
+    private static String address = "localhost:2181,localhost:2182,localhost:2183,localhost:2184/tengLock";
 
     private static DefaultWatch watch = new DefaultWatch();
 

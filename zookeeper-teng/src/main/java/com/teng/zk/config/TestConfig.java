@@ -1,6 +1,7 @@
 package com.teng.zk.config;
 
 import org.apache.zookeeper.ZooKeeper;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -51,6 +52,15 @@ public class TestConfig {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    @After
+    public void close() {
+        try{
+            zk.close();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 }

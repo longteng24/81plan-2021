@@ -142,7 +142,7 @@ public class zk01 {
         }, "teng");
         System.out.println("---async over----");
 
-           Thread.sleep(222222222);
+         //  Thread.sleep(222222222);
     }
 
 }
